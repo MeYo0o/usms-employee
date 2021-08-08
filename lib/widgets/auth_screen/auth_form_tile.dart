@@ -26,17 +26,16 @@ class _AuthFormTileState extends State<AuthFormTile> {
       child: TextFormField(
         key: ValueKey(widget.tileName),
         textInputAction: TextInputAction.next,
-        keyboardType: widget.tileName == 'Email Address'
-            ? TextInputType.emailAddress
-            : TextInputType.visiblePassword,
+        keyboardType:
+            widget.tileName == 'Username' ? TextInputType.name : TextInputType.visiblePassword,
         controller: widget.cont,
         obscureText: widget.obscureVar!,
         validator: (value) {
-          if (widget.tileName == 'Email Address') {
+          if (widget.tileName == 'Username') {
             if (value!.isEmpty) {
-              return 'Please Enter a valid email';
+              return 'Please Enter a valid Username';
             } else if (value.contains('@')) {
-              return 'please remove @ and whatever comes after it';
+              return 'we want just a username not an email';
             }
             return null;
           } else if (widget.tileName == 'Password') {
@@ -71,7 +70,7 @@ class _AuthFormTileState extends State<AuthFormTile> {
               color: Theme.of(context).primaryColor,
             ),
           ),
-          suffixText: widget.tileName == 'Email Address' ? '@qls-egypt.com' : null,
+          // suffixText: widget.tileName == 'Username' ? '@qls-egypt.com' : null,
           suffixIcon: (widget.tileName == 'Password' || widget.tileName == 'Confirm Password')
               ? IconButton(
                   icon: widget.obscureVar == false ? Icon(Icons.lock_open_sharp) : Icon(Icons.lock),

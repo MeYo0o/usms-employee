@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:usms_mobile/providers/dbm_provider.dart';
 
 class BirthDayTile extends StatefulWidget {
-  DateTime birthDate = DateTime.now();
-  BirthDayTile(this.birthDate);
+  // DateTime? birthDate;
+  // BirthDayTile({this.birthDate});
+
+  bool? isEditMode = false;
+  BirthDayTile({this.isEditMode});
 
   @override
   _BirthDayTileState createState() => _BirthDayTileState();
@@ -11,17 +16,18 @@ class BirthDayTile extends StatefulWidget {
 
 class _BirthDayTileState extends State<BirthDayTile> {
   Future<void>? _showDatePicker(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
+    final dbm = Provider.of<DBM>(context, listen: false);
+    await showDatePicker(
             context: context,
             firstDate: DateTime(1950),
-            initialDate: DateTime(1990),
+            initialDate: dbm.birthDay ?? DateTime(1990),
             lastDate: DateTime.now())
         .then((pickedDate) {
       if (pickedDate == null) {
         return;
       } else {
         setState(() {
-          widget.birthDate = pickedDate;
+          dbm.updateBirthDay(pickedDate);
         });
       }
     });
@@ -29,6 +35,7 @@ class _BirthDayTileState extends State<BirthDayTile> {
 
   @override
   Widget build(BuildContext context) {
+    final dbm = Provider.of<DBM>(context);
     return Container(
       margin: const EdgeInsets.all(8.0),
       padding: const EdgeInsets.all(8.0),
@@ -38,11 +45,10 @@ class _BirthDayTileState extends State<BirthDayTile> {
       ),
       child: Row(
         children: [
-          Text(
-              'Birthday : ${widget.birthDate == null ? '' : DateFormat('yyyy-MM-dd').format(widget.birthDate)}'),
+          Text('Birthday : ${dbm.birthDay == null ? 'Not Set' : DateFormat('yyyy-MM-dd').format(dbm.birthDay!)}'),
           Spacer(),
           ElevatedButton(
-            onPressed: () => _showDatePicker(context),
+            onPressed: widget.isEditMode == true ? null : () => _showDatePicker(context),
             child: Text('Pick Date'),
           ),
         ],

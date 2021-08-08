@@ -1,17 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:usms_mobile/providers/dbm_provider.dart';
-import 'package:usms_mobile/screens/mandatory_signup_screen.dart';
 
-class ProfileImage extends StatefulWidget {
-  File? profileImage;
+class ProfileImage extends StatelessWidget {
+  final bool isEditingMode;
+  ProfileImage({required this.isEditingMode});
 
-  @override
-  _ProfileImageState createState() => _ProfileImageState();
-}
-
-class _ProfileImageState extends State<ProfileImage> {
   Future<File?> _pickImage(BuildContext context) async {
     return showDialog(
         context: context,
@@ -26,23 +22,24 @@ class _ProfileImageState extends State<ProfileImage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ElevatedButton(
-                    onPressed: () =>
-                        DBM().onImageButtonPressed(ImageSource.camera).then((croppedImage) {
-                      setState(() {
-                        widget.profileImage = croppedImage;
+                    onPressed: () {
+                      final dbm = Provider.of<DBM>(context, listen: false);
+                      dbm.onImageButtonPressed(ImageSource.camera).then((croppedImage) {
+                        dbm.updateProfileImage(croppedImage);
+                        Navigator.of(ctx).pop();
                       });
-                    }),
+                    },
                     child: Text('Camera'),
                   ),
                   SizedBox(width: 10),
                   ElevatedButton(
-                    onPressed: () =>
-                        DBM().onImageButtonPressed(ImageSource.gallery).then((croppedImage) {
-                      setState(() {
-                        widget.profileImage = croppedImage;
+                    onPressed: () {
+                      final dbm = Provider.of<DBM>(context, listen: false);
+                      dbm.onImageButtonPressed(ImageSource.gallery).then((croppedImage) {
+                        dbm.updateProfileImage(croppedImage);
+                        Navigator.of(ctx).pop();
                       });
-                      Navigator.of(ctx).pop();
-                    }),
+                    },
                     child: Text('Gallery'),
                   ),
                   SizedBox(width: 10),
@@ -61,6 +58,7 @@ class _ProfileImageState extends State<ProfileImage> {
 
   @override
   Widget build(BuildContext context) {
+    final dbm = Provider.of<DBM>(context);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
       padding: const EdgeInsets.all(8),
@@ -74,7 +72,7 @@ class _ProfileImageState extends State<ProfileImage> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: widget.profileImage != null
+            child: dbm.pickedImage != null
                 ? Container(
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.yellow, width: 2),
@@ -82,10 +80,15 @@ class _ProfileImageState extends State<ProfileImage> {
                     ),
                     child: CircleAvatar(
                       radius: 50,
-                      child: Image.file(
-                        widget.profileImage!,
-                        fit: BoxFit.cover,
-                      ),
+                      child: isEditingMode
+                          ? Image.network(
+                              dbm.userData['profileImage'],
+                              fit: BoxFit.cover,
+                            )
+                          : Image.file(
+                              dbm.pickedImage!,
+                              fit: BoxFit.cover,
+                            ),
                     ),
                   )
                 : Container(
@@ -102,9 +105,11 @@ class _ProfileImageState extends State<ProfileImage> {
                   ),
           ),
           ElevatedButton(
-              onPressed: () {
-                _pickImage(context);
-              },
+              onPressed: isEditingMode
+                  ? null
+                  : () {
+                      _pickImage(context);
+                    },
               child: Text('Pick Profile Image')),
         ],
       ),

@@ -6,11 +6,13 @@ class FormTile extends StatelessWidget {
   final TextEditingController? controller;
   final TextInputType inputType;
   final TextInputAction action;
+  final bool readOnlyStatus;
   FormTile({
     @required this.fieldName,
     @required this.controller,
     this.inputType = TextInputType.name,
     this.action = TextInputAction.next,
+    this.readOnlyStatus = false,
   });
 
   @override
@@ -22,6 +24,8 @@ class FormTile extends StatelessWidget {
         textInputAction: action,
         keyboardType: inputType,
         controller: controller,
+        readOnly: readOnlyStatus,
+        autocorrect: false,
         decoration: InputDecoration(
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(7),
