@@ -45,7 +45,7 @@ class _BirthDayTileState extends State<BirthDayTile> {
       ),
       child: Row(
         children: [
-          Text('Birthday : ${dbm.birthDay == null ? 'Not Set' : DateFormat('yyyy-MM-dd').format(dbm.birthDay!)}'),
+          Text('Birthday : ${dbm.birthDay == null ? 'Not Set' : DateFormat('dd-MM-yyyy').format(dbm.birthDay!)}'),
           Spacer(),
           ElevatedButton(
             onPressed: widget.isEditMode == true ? null : () => _showDatePicker(context),

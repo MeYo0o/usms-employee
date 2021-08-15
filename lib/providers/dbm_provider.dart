@@ -9,9 +9,7 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:usms_mobile/screens/checking/profile_data_check.dart';
 import 'package:http/http.dart' as http;
-import 'package:uuid/uuid.dart';
 
 class DBM with ChangeNotifier {
   //Firebase Init
@@ -19,6 +17,7 @@ class DBM with ChangeNotifier {
   FirebaseStorage firestorage = FirebaseStorage.instance;
   //UserData Container
   var userData;
+  Map<String, dynamic> interviewerData = {};
   DateTime? birthDay;
   File? pickedImage;
 
@@ -89,7 +88,7 @@ class DBM with ChangeNotifier {
     );
   }
 
-  //get UserData
+  //get UserData + interviewerData (if exists)
   Future<void> getUserData() async {
     //get current user
     User? user = FirebaseAuth.instance.currentUser;
@@ -98,6 +97,7 @@ class DBM with ChangeNotifier {
         userData = snapshot.data();
       },
     );
+    await getInterviewerData();
     notifyListeners();
   }
 
@@ -109,6 +109,29 @@ class DBM with ChangeNotifier {
       // print(requests);
     });
     return requests;
+  }
+
+  //get Interviewer data , if found in your profile
+  Future<void> getInterviewerData() async {
+    if (userData['scheduledInterview']['interviewerId'] == '') {
+      return;
+    }
+    await firestore
+        .collection('interviewers')
+        .doc(userData['scheduledInterview']['interviewerId'])
+        .get()
+        .then((DocumentSnapshot snapshot) {
+      //if u wanna get all data
+      // interviewerData = snapshot.data() as Map<String, dynamic>;
+
+      //if u wanna get specific data
+      interviewerData.addAll({
+        'fullName': snapshot.get('fullName'),
+        'degreeType': snapshot.get('degreeType'),
+        'speciality': snapshot.get('speciality'),
+      });
+    });
+    // return requests;
   }
 
   //Submit Mandatory Data
@@ -204,15 +227,31 @@ class DBM with ChangeNotifier {
           'peopleToRefer': isEditMode ? userData['peopleToRefer'] : {},
           'appliedJob': isEditMode ? userData['appliedJob'] : '',
           'interview': isEditMode ? userData['interview'] : '',
-          'scheduledInterview': isEditMode ? userData['scheduledInterview'] : '',
+          //new stuff
+          'scheduledInterview': isEditMode
+              ? userData['scheduledInterview']
+              : {
+                  'interviewerId': '',
+                  'dayTime': '',
+                  'hourTime': '',
+                  'noteToCandidate': '',
+                },
+          'rejection': isEditMode
+              ? userData['rejection']
+              : {
+                  'interviewerId': '',
+                  'rejectionMessage': '',
+                },
+          'timeToApply': isEditMode ? userData['timeToApply'] : '',
         }).then((value) async {
           if (isEditMode) {
             getUserData();
             hideNShowSnackBar(context, 'Data is successfully updated!');
             return;
-          } else if (!isEditMode) {
-            // Navigator.of(context).pushReplacementNamed(ProfileDataCheck.id);
           }
+          // else if (!isEditMode) {
+          //   // Navigator.of(context).pushReplacementNamed(ProfileDataCheck.id);
+          // }
         });
       } catch (err) {
         print(err);
@@ -246,7 +285,25 @@ class DBM with ChangeNotifier {
   }
 
   //apply job for user
-  Future<void> applyJobForUser(BuildContext context, String jobUID) async {
+  Future<void> applyForAJob(BuildContext context, String jobUID) async {
+    //first check if the candidate is eligible to apply for a job (whether he has 1 day / 7 day cooldown)
+    if (userData['timeToApply'] != '') {
+      int timeDiffInHours = DateTime.now().difference(DateTime.parse(userData['timeToApply'])).inHours;
+      int timeDiffInDays = DateTime.now().difference(DateTime.parse(userData['timeToApply'])).inDays;
+      print(timeDiffInHours);
+      //if the user has 1 day cooldown
+      if (timeDiffInDays > 0 && timeDiffInDays <= 1) {
+        //notify the user of cooldown
+        hideNShowSnackBar(context, 'You can\'t apply to any job for the next $timeDiffInHours hours');
+        return;
+      }
+      //if the user has 7 day cooldown
+      if (timeDiffInDays > 0 && timeDiffInDays <= 7) {
+        //notify the user of cooldown
+        hideNShowSnackBar(context, 'You can\'t apply to any job for the next $timeDiffInDays days');
+        return;
+      }
+    }
     try {
       User? user = FirebaseAuth.instance.currentUser;
       // -- OLD
@@ -284,7 +341,26 @@ class DBM with ChangeNotifier {
   }
 
   //delete job for user
-  Future<void> deleteJobForUser(BuildContext context, String jobUID) async {
+  Future<void> unApplyForAJob(BuildContext context, String jobUID) async {
+    //first check if the candidate is eligible to un-apply for a job (whether he has 1 day / 7 day cooldown)
+    if (userData['timeToApply'] != '') {
+      int timeDiffInHours = DateTime.now().difference(DateTime.parse(userData['timeToApply'])).inHours;
+      int timeDiffInDays = DateTime.now().difference(DateTime.parse(userData['timeToApply'])).inDays;
+      print(timeDiffInHours);
+      //if the user has 1 day cooldown
+      if (timeDiffInDays > 0 && timeDiffInDays <= 1) {
+        //notify the user of cooldown
+        hideNShowSnackBar(context, 'You can\'t un-apply from any job for the next $timeDiffInHours hours');
+        return;
+      }
+      //if the user has 7 day cooldown
+      if (timeDiffInDays > 0 && timeDiffInDays <= 7) {
+        //notify the user of cooldown
+        hideNShowSnackBar(context, 'You can\'t un-apply from any job for the next $timeDiffInDays days');
+        return;
+      }
+    }
+
     try {
       User? user = FirebaseAuth.instance.currentUser;
       // -- OLD

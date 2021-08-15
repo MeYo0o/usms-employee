@@ -115,14 +115,20 @@ class _AuthScreenState extends State<AuthScreen> {
                     ],
                   ),
                 ),
-                AuthFormTile(tileName: 'Username', cont: _emailCont, obscureVar: false),
-                AuthFormTile(tileName: 'Password', cont: _passwordCont, obscureVar: _showPassword),
+                AuthFormTile(
+                    tileName: 'Username', cont: _emailCont, obscureVar: false, textInputAction: TextInputAction.next),
+                AuthFormTile(
+                    tileName: 'Password',
+                    cont: _passwordCont,
+                    obscureVar: _showPassword,
+                    textInputAction: TextInputAction.next),
                 if (_isSignup)
                   AuthFormTile(
                     tileName: 'Confirm Password',
                     cont: _confirmPasswordCont,
                     pwCheckCont: _passwordCont,
                     obscureVar: _showPassword,
+                    textInputAction: TextInputAction.done,
                   ),
                 TextButton(
                   onPressed: () {

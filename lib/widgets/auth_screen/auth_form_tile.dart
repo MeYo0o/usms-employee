@@ -5,12 +5,13 @@ class AuthFormTile extends StatefulWidget {
   final String? tileName;
   final TextEditingController? cont;
   final TextEditingController? pwCheckCont;
-
+  TextInputAction? textInputAction;
   bool? obscureVar;
   AuthFormTile({
     @required this.tileName,
     @required this.cont,
     @required this.obscureVar,
+    @required this.textInputAction,
     this.pwCheckCont,
   });
 
@@ -25,9 +26,8 @@ class _AuthFormTileState extends State<AuthFormTile> {
       padding: const EdgeInsets.all(8),
       child: TextFormField(
         key: ValueKey(widget.tileName),
-        textInputAction: TextInputAction.next,
-        keyboardType:
-            widget.tileName == 'Username' ? TextInputType.name : TextInputType.visiblePassword,
+        textInputAction: widget.textInputAction,
+        keyboardType: widget.tileName == 'Username' ? TextInputType.name : TextInputType.visiblePassword,
         controller: widget.cont,
         obscureText: widget.obscureVar!,
         validator: (value) {

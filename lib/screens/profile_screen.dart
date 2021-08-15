@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:usms_mobile/job_data_screen.dart';
 import 'package:usms_mobile/providers/auth_provider.dart';
@@ -18,16 +19,15 @@ class ProfileScreen extends StatelessWidget {
     double width = MediaQuery.of(context).size.width;
     final auth = Provider.of<Auth>(context);
     final dbm = Provider.of<DBM>(context);
-    //while loading profile , retrieve network url image and convert it into file saved
-    // dbm.fileFromImageUrl(dbm.userData['profileImage']);
+
+    //testing
+    // print(dbm.interviewerData);
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
           title: Text(
             'User Profile',
-            style: Theme.of(context).textTheme.headline5!.copyWith(
-                  color: Colors.white,
-                ),
+            style: Theme.of(context).textTheme.headline5!.copyWith(color: Colors.white),
           ),
           centerTitle: true,
         ),
@@ -37,7 +37,7 @@ class ProfileScreen extends StatelessWidget {
             // crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Container(
-                height: height * 0.25,
+                height: height * 0.27,
                 margin: const EdgeInsets.all(10),
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
@@ -53,7 +53,7 @@ class ProfileScreen extends StatelessWidget {
                         child: Image.network(
                           dbm.userData['profileImage'],
                           fit: BoxFit.cover,
-                          width: width * 0.4,
+                          width: width * 0.3,
                         ),
                         borderRadius: BorderRadius.circular(50),
                       ),
@@ -73,14 +73,15 @@ class ProfileScreen extends StatelessWidget {
                           SizedBox(height: height * 0.01),
                           Text(
                             dbm.userData['degreeType'],
-                            style: Theme.of(context).textTheme.bodyText1!.copyWith(fontSize: width * 0.05),
+                            style: Theme.of(context).textTheme.bodyText1!.copyWith(fontSize: width * 0.04),
                             textAlign: TextAlign.center,
                           ),
                           SizedBox(height: height * 0.01),
                           Text(
                             dbm.userData['speciality'],
-                            style: Theme.of(context).textTheme.bodyText1!.copyWith(fontSize: width * 0.04),
+                            style: Theme.of(context).textTheme.bodyText1!.copyWith(fontSize: width * 0.03),
                             textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -93,47 +94,57 @@ class ProfileScreen extends StatelessWidget {
                 rightText: dbm.userData['verified'],
                 rightColor: (dbm.userData['verified'] == 'unverified') ? Colors.red[400] : Colors.green,
               ),
-              StreamBuilder<QuerySnapshot>(
-                stream: dbm.firestore.collection('jobs').snapshots(),
-                builder: (context, AsyncSnapshot<QuerySnapshot> jobsData) {
-                  if (jobsData.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  }
-                  if (jobsData.hasError) {
-                    return ErrorScreen();
-                  }
-                  return ProfileTile(
-                    leftText: 'Jobs Available',
-                    rightText: jobsData.data!.docs.length.toString(),
-                    rightColor: Colors.blueGrey,
-                  );
-                },
-              ),
-              ProfileTile(
-                leftText: 'Jobs Applied',
-                rightText: dbm.userData['appliedJob'] != '' ? '1' : '0',
-                rightColor: Colors.teal[400],
-              ),
-              if (dbm.userData['verified'] == 'verified')
-                ElevatedButton(
-                  onPressed: () => dbm.userData['verified'] == 'verified'
-                      ? whereTo(context)
-                      : dbm.hideNShowSnackBar(context, 'You have to be verified , please wait for HR to verify you'),
-                  child: Text(
-                    'Apply To A Job',
-                    style: Theme.of(context).textTheme.bodyText1!.copyWith(
-                          color: Colors.white,
-                          fontSize: width * 0.04,
-                          fontWeight: FontWeight.bold,
-                        ),
+              if (dbm.userData['interview'] != 'accepted')
+                StreamBuilder<QuerySnapshot>(
+                  stream: dbm.firestore.collection('jobs').snapshots(),
+                  builder: (context, AsyncSnapshot<QuerySnapshot> jobsData) {
+                    if (jobsData.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    if (jobsData.hasError) {
+                      return ErrorScreen();
+                    }
+                    return ProfileTile(
+                      leftText: 'Jobs Available',
+                      rightText: jobsData.data!.docs.length.toString(),
+                      rightColor: Colors.blueGrey,
+                    );
+                  },
+                ),
+              if (dbm.userData['interview'] != 'accepted')
+                ProfileTile(
+                  leftText: 'Jobs Applied',
+                  rightText: dbm.userData['appliedJob'] != '' ? '1' : '0',
+                  rightColor: Colors.teal[400],
+                ),
+              if (dbm.userData['interview'] != 'accepted')
+                if (dbm.userData['verified'] == 'verified')
+                  ElevatedButton(
+                    onPressed: () => dbm.userData['verified'] == 'verified'
+                        ? whereTo(context)
+                        : dbm.hideNShowSnackBar(context, 'You have to be verified , please wait for HR to verify you'),
+                    child: Text(
+                      'Apply To A Job',
+                      style: Theme.of(context).textTheme.bodyText1!.copyWith(
+                            color: Colors.white,
+                            fontSize: width * 0.04,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: Size(width * 0.4, height * 0.05),
+                    ),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    fixedSize: Size(width * 0.4, height * 0.05),
-                  ),
+              if (dbm.userData['interview'] == 'accepted')
+                ProfileTile(
+                  leftText: 'Interviews',
+                  rightText: '1',
+                  tileFunc: () => _showDialog(context),
                 ),
 
               Spacer(),
               // if (dbm.userData['verified'] == 'unverified')
+
               ProfileTile(
                 leftText: 'Edit Profile',
                 rightText: 'Click Here',
@@ -176,5 +187,106 @@ class ProfileScreen extends StatelessWidget {
     } else {
       Navigator.of(context).pushNamed(JobsScreen.id);
     }
+  }
+
+  Future<void> _showDialog(BuildContext context) {
+    final height = MediaQuery.of(context).size.height;
+    final width = MediaQuery.of(context).size.width;
+    final dbm = Provider.of<DBM>(context, listen: false);
+    String jobName = dbm.userData['scheduledInterview']['jobName'];
+    String jobPosition = dbm.userData['scheduledInterview']['jobPosition'];
+    String hourTime = dbm.userData['scheduledInterview']['hourTime'];
+    String noteToCandidate = dbm.userData['scheduledInterview']['noteToCandidate'];
+    DateTime dayDate = DateTime.parse(dbm.userData['scheduledInterview']['dayTime']);
+    Map<String, dynamic> interviewerData = dbm.interviewerData;
+
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        scrollable: true,
+        title: Text(
+          'You got an Interview!',
+          textAlign: TextAlign.center,
+        ),
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(child: dialogTile(context, '$jobName', '$jobPosition')),
+            SizedBox(height: height * 0.01),
+            dialogTile(context, 'Date', '${DateFormat('dd-MM-yyyy').format(dayDate)}'),
+            SizedBox(height: height * 0.01),
+            dialogTile(context, 'Time', '$hourTime'),
+            SizedBox(height: height * 0.01),
+            dialogTile(context, 'Interviewer', '${interviewerData['fullName']}.'),
+            SizedBox(height: height * 0.01),
+            dialogTile(context, 'Degree', '${interviewerData['degreeType']}.'),
+            SizedBox(height: height * 0.01),
+            dialogTile(context, 'Speciality', '${interviewerData['speciality']}.'),
+            SizedBox(height: height * 0.01),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.amber[200],
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Text('Notes',
+                        style: Theme.of(context).textTheme.bodyText1!.copyWith(
+                              color: Theme.of(context).primaryColor,
+                              fontFamily: 'OtomanopeeOne',
+                              fontSize: width * 0.04,
+                            )),
+                  ),
+                  Text(noteToCandidate.replaceAll('.', '\n'),
+                      style: Theme.of(context).textTheme.bodyText1!.copyWith(
+                            color: Theme.of(context).accentColor,
+                            fontFamily: 'Poppins',
+                            fontSize: width * 0.042,
+                          )),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          Center(
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Acknowledged', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(fixedSize: Size(width * 0.4, height * 0.05)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  RichText dialogTile(BuildContext context, String leftText, String rightText) {
+    final height = MediaQuery.of(context).size.height;
+    final width = MediaQuery.of(context).size.width;
+    return RichText(
+      text: TextSpan(
+        children: [
+          TextSpan(
+              text: '$leftText : ',
+              style: Theme.of(context).textTheme.bodyText1!.copyWith(
+                    color: Theme.of(context).primaryColor,
+                    fontFamily: 'OtomanopeeOne',
+                    fontSize: width * 0.04,
+                  )),
+          TextSpan(
+              text: '$rightText',
+              style: Theme.of(context).textTheme.bodyText1!.copyWith(
+                    color: Theme.of(context).accentColor,
+                    fontFamily: 'Poppins',
+                    fontSize: width * 0.042,
+                  )),
+        ],
+      ),
+    );
   }
 }

@@ -223,7 +223,6 @@ class _MandatorySignUpScreenState extends State<MandatorySignUpScreen> {
                             _diplomaCont.text,
                             widget.isEditMode,
                           );
-                          _changeIsLoadingState();
                         },
                         child: Text('Submit Your Data'),
                       ),

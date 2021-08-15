@@ -77,6 +77,13 @@ flutter:
     - family: OtomanopeeOne
       fonts:
         - asset: assets/fonts/OtomanopeeOne-Regular.ttf
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+
+
+
+
   #       - asset: fonts/Schyler-Italic.ttf
   #         style: italic
   #   - family: Trajan Pro
