@@ -10,8 +10,26 @@ import 'package:usms_mobile/screens/mandatory_signup_screen.dart';
 import 'package:usms_mobile/widgets/db_check_screen/error_screen.dart';
 import 'package:usms_mobile/widgets/widget_exporter.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   static const String id = 'profile_screen';
+
+  @override
+  _ProfileScreenState createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration.zero).then((_) {
+      final dbm = Provider.of<DBM>(context, listen: false);
+      //Rejection Message stuff
+      if (dbm.userData['rejection']['interviewerId'] != '') {
+        int timeToApply = DateTime.now().difference(DateTime.parse(dbm.userData['timeToApply'])).inDays;
+        _showRejectionDialog(context, timeToApply);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -139,7 +157,7 @@ class ProfileScreen extends StatelessWidget {
                 ProfileTile(
                   leftText: 'Interviews',
                   rightText: '1',
-                  tileFunc: () => _showDialog(context),
+                  tileFunc: () => _showInterviewDialog(context),
                 ),
 
               Spacer(),
@@ -179,7 +197,6 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  //functions
   void whereTo(BuildContext context) {
     final dbm = Provider.of<DBM>(context, listen: false);
     if (dbm.userData['expectedSalary'] == null) {
@@ -189,7 +206,7 @@ class ProfileScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _showDialog(BuildContext context) {
+  Future<void> _showInterviewDialog(BuildContext context) async {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
     final dbm = Provider.of<DBM>(context, listen: false);
@@ -199,6 +216,14 @@ class ProfileScreen extends StatelessWidget {
     String noteToCandidate = dbm.userData['scheduledInterview']['noteToCandidate'];
     DateTime dayDate = DateTime.parse(dbm.userData['scheduledInterview']['dayTime']);
     Map<String, dynamic> interviewerData = dbm.interviewerData;
+
+    //test values
+    // print(jobName);
+    // print(jobPosition);
+    // print(hourTime);
+    // print(noteToCandidate);
+    // print(dayDate);
+    // print(interviewerData);
 
     return showDialog(
       context: context,
@@ -285,6 +310,79 @@ class ProfileScreen extends StatelessWidget {
                     fontFamily: 'Poppins',
                     fontSize: width * 0.042,
                   )),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showRejectionDialog(BuildContext context, int timeToApply) {
+    final height = MediaQuery.of(context).size.height;
+    final width = MediaQuery.of(context).size.width;
+    final dbm = Provider.of<DBM>(context, listen: false);
+    String jobName = dbm.userData['rejection']['jobName'];
+    String jobPosition = dbm.userData['rejection']['jobPosition'];
+    String noteToCandidate = dbm.userData['rejection']['rejectionMessage'];
+    TextStyle headText = Theme.of(context).textTheme.bodyText1!.copyWith(
+          color: Theme.of(context).primaryColor,
+          fontFamily: 'OtomanopeeOne',
+          fontSize: width * 0.04,
+        );
+    TextStyle bodyText = Theme.of(context)
+        .textTheme
+        .bodyText1!
+        .copyWith(color: Theme.of(context).accentColor, fontFamily: 'Poppins', fontSize: width * 0.04);
+
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        scrollable: true,
+        title: Text(
+          'Sorry , you got rejected',
+          textAlign: TextAlign.center,
+        ),
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Sorry but you got rejected from : ', style: bodyText),
+            Center(
+              child: Text(
+                '$jobName : $jobPosition',
+                style: headText,
+              ),
+            ),
+            Text('Better Luck next time ♥', style: bodyText),
+            SizedBox(height: height * 0.01),
+            Text('Note that you have ${timeToApply * -1} days before you can apply to another job.', style: bodyText),
+            SizedBox(height: height * 0.01),
+            Text('Here is the feedback from the interviewer :', style: bodyText),
+            SizedBox(height: height * 0.01),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.amber[200],
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Text('Notes', style: headText),
+                  ),
+                  Text(noteToCandidate.replaceAll('.', '\n'), style: bodyText),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          Center(
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Acknowledged', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(fixedSize: Size(width * 0.4, height * 0.05)),
+            ),
+          ),
         ],
       ),
     );

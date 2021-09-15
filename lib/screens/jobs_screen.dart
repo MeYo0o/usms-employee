@@ -104,7 +104,9 @@ class JobsScreen extends StatelessWidget {
             children: [
               ElevatedButton(onPressed: () => Navigator.of(context).pop(), child: Text('Cancel')),
               if (dbm.userData['appliedJob'] != (jobData['uid']))
-                ElevatedButton(onPressed: () => dbm.applyForAJob(context, jobData['uid']), child: Text('Apply')),
+                ElevatedButton(
+                    onPressed: () => dbm.applyForAJob(context, jobData['uid'], DateTime.now().add(Duration(days: 2))),
+                    child: Text('Apply')),
               if (dbm.userData['appliedJob'] == (jobData['uid']))
                 ElevatedButton(
                   onPressed: () => dbm.unApplyForAJob(context, jobData['uid']),

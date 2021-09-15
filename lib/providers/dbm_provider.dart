@@ -1,6 +1,5 @@
 //This Provider will contain Camera images, firestore & storage
 import 'dart:io';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -228,20 +227,27 @@ class DBM with ChangeNotifier {
           'appliedJob': isEditMode ? userData['appliedJob'] : '',
           'interview': isEditMode ? userData['interview'] : '',
           //new stuff
+          //in case he got accepted for an interview
           'scheduledInterview': isEditMode
               ? userData['scheduledInterview']
               : {
+                  'jobName': '',
+                  'jobPosition': '',
                   'interviewerId': '',
                   'dayTime': '',
                   'hourTime': '',
                   'noteToCandidate': '',
                 },
+          //in case he got rejected for an interview
           'rejection': isEditMode
               ? userData['rejection']
               : {
+                  'jobName': '',
+                  'jobPosition': '',
                   'interviewerId': '',
                   'rejectionMessage': '',
                 },
+          //cooldown timer before apply/un-apply to any other job
           'timeToApply': isEditMode ? userData['timeToApply'] : '',
         }).then((value) async {
           if (isEditMode) {
@@ -262,8 +268,16 @@ class DBM with ChangeNotifier {
   }
 
   //Update Job Data
-  Future<void> updateJobData(BuildContext context, String maritalStatus, String nationalId, String militaryStatus,
-      String expectedSalary, Map experiences, Map personalAbilities, Map peopleToRefer) async {
+  Future<void> updateJobData(
+    BuildContext context,
+    String maritalStatus,
+    String nationalId,
+    String militaryStatus,
+    String expectedSalary,
+    Map experiences,
+    Map personalAbilities,
+    Map peopleToRefer,
+  ) async {
     try {
       User? user = FirebaseAuth.instance.currentUser;
       FocusScope.of(context).unfocus();
@@ -285,25 +299,25 @@ class DBM with ChangeNotifier {
   }
 
   //apply job for user
-  Future<void> applyForAJob(BuildContext context, String jobUID) async {
+  Future<void> applyForAJob(BuildContext context, String jobUID, DateTime? timeToApply) async {
+    /*
+    *
+    we don't need to check for this , as we will apply for a job for the first time , then we can't un-apply until
+    the time has come , then we can apply again , and we surely can't apply to any other job as per unApplyForAJob
+    checking for existing appliedJob entry != ''
+    *
+    * */
     //first check if the candidate is eligible to apply for a job (whether he has 1 day / 7 day cooldown)
-    if (userData['timeToApply'] != '') {
-      int timeDiffInHours = DateTime.now().difference(DateTime.parse(userData['timeToApply'])).inHours;
-      int timeDiffInDays = DateTime.now().difference(DateTime.parse(userData['timeToApply'])).inDays;
-      print(timeDiffInHours);
-      //if the user has 1 day cooldown
-      if (timeDiffInDays > 0 && timeDiffInDays <= 1) {
-        //notify the user of cooldown
-        hideNShowSnackBar(context, 'You can\'t apply to any job for the next $timeDiffInHours hours');
-        return;
-      }
-      //if the user has 7 day cooldown
-      if (timeDiffInDays > 0 && timeDiffInDays <= 7) {
-        //notify the user of cooldown
-        hideNShowSnackBar(context, 'You can\'t apply to any job for the next $timeDiffInDays days');
-        return;
-      }
-    }
+    // if (userData['timeToApply'] != '') {
+    //   // int timeDiffInHours = DateTime.now().difference(DateTime.parse(userData['timeToApply'])).inHours;
+    //   int timeDiffInDays = DateTime.now().difference(DateTime.parse(userData['timeToApply'])).inDays;
+    //   //if the user has 1 day cooldown
+    //   if (timeDiffInDays > 0 && timeDiffInDays <= 1) {
+    //     //notify the user of cooldown
+    //     hideNShowSnackBar(context, 'You can\'t apply to any job for the next $timeDiffInDays days');
+    //     return;
+    //   }
+    // }
     try {
       User? user = FirebaseAuth.instance.currentUser;
       // -- OLD
@@ -327,7 +341,10 @@ class DBM with ChangeNotifier {
       newRequests.add(userData['uid']);
       await firestore.collection('users').doc(user!.uid).update({
         'appliedJob': jobUID,
+        //update the timeToApply to prevent apply/un-apply to & from another jobs , until the time is done
+        'timeToApply': timeToApply!.toIso8601String(),
       });
+
       await firestore.collection('jobs').doc(jobUID).update({
         'requests': newRequests,
       }).then((_) {
@@ -344,19 +361,14 @@ class DBM with ChangeNotifier {
   Future<void> unApplyForAJob(BuildContext context, String jobUID) async {
     //first check if the candidate is eligible to un-apply for a job (whether he has 1 day / 7 day cooldown)
     if (userData['timeToApply'] != '') {
-      int timeDiffInHours = DateTime.now().difference(DateTime.parse(userData['timeToApply'])).inHours;
+      // int timeDiffInHours = DateTime.now().difference(DateTime.parse(userData['timeToApply'])).inHours;
       int timeDiffInDays = DateTime.now().difference(DateTime.parse(userData['timeToApply'])).inDays;
-      print(timeDiffInHours);
+      print('time in Days : ' + (timeDiffInDays * -1).toString());
       //if the user has 1 day cooldown
-      if (timeDiffInDays > 0 && timeDiffInDays <= 1) {
+      if (timeDiffInDays < 0) {
         //notify the user of cooldown
-        hideNShowSnackBar(context, 'You can\'t un-apply from any job for the next $timeDiffInHours hours');
-        return;
-      }
-      //if the user has 7 day cooldown
-      if (timeDiffInDays > 0 && timeDiffInDays <= 7) {
-        //notify the user of cooldown
-        hideNShowSnackBar(context, 'You can\'t un-apply from any job for the next $timeDiffInDays days');
+        Navigator.of(context).pop();
+        hideNShowSnackBar(context, 'You can\'t un-apply from any job for the next ${timeDiffInDays * -1} day');
         return;
       }
     }
@@ -372,6 +384,8 @@ class DBM with ChangeNotifier {
       //
       await firestore.collection('users').doc(user!.uid).update({
         'appliedJob': '',
+        //reset the time so we can apply to a new job
+        'timeToApply': '',
       });
       await firestore.collection('jobs').doc(jobUID).update({
         'requests': newRequests,
