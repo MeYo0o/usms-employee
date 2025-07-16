@@ -35,12 +35,6 @@ This is a full featured Employee System made for schools , but it's generic to s
 
 <table>
   <tr>
-    <td><img src="assets\showcase\2.png" width=600 height=350></td>
-  </tr>
-</table>
-
-<table>
-  <tr>
     <td><img src="assets\showcase\5.jpg" width=270 height=480></td>
     <td><img src="assets\showcase\6.jpg" width=270 height=480></td>
   </tr>
